@@ -138,8 +138,8 @@ function convertToString(number) {
 
 function createDateFromMinures(minutes) {
     var day = Math.floor(minutes / DAY);
-    var hours = Math.floor((minutes - day * DAY) / HOUR);
-    var minutess = minutes - day * DAY - hours * HOUR;
+    var hours = Math.floor((minutes % DAY) / HOUR);
+    var minutess = minutes % DAY % HOUR;
 
     return {
         day: WEEKDAY[day],
