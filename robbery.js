@@ -50,7 +50,7 @@ function getTimeForAll(schedule) {
 }
 
 function searchTimeInAllRang(timeBank, time, busyTime, day) {
-    for (var startRobbery = timeBank[0]; startRobbery < timeBank[1] - time + 1; startRobbery++) {
+    for (var startRobbery = timeBank[0]; startRobbery < timeBank[1] - time; startRobbery++) {
 
         var timeless = searchTime(busyTime, startRobbery, time, day);
         if (timeless) {
