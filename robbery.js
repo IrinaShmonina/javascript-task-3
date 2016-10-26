@@ -1,10 +1,11 @@
 'use strict';
 
-/**
- * Сделано задание на звездочку
- * Реализовано оба метода и tryLater
- */
-exports.isStar = true;
+var DATE = /^([А-Я]{2})?[ ]?(\d\d)[:](\d\d)\+(\d+)$/;
+var WEEKDAY = ['ПН', 'ВТ', 'СР'];
+var HOUR = 60;
+var DAY = 24 * HOUR;
+var shift = 0;
+exports.isStar = false;
 
 /**
  * @param {Object} schedule – Расписание Банды
@@ -14,8 +15,76 @@ exports.isStar = true;
  * @param {String} workingHours.to – Время закрытия, например, "18:00+5"
  * @returns {Object}
  */
+
+
+function getTime(timeFrom, timeTo) {
+    var start = getMinut(timeFrom); // in minuts
+    var end = getMinut(timeTo);
+
+    return [start, end];
+}
+
+function getMinut(str) {
+    var re = /^(\d\d):(\d\d)[+](\d)$/;
+    var rez = str.match(re);
+    shift = parseInt(rez[3]);
+
+    return (parseInt(rez[1]) * HOUR + parseInt(rez[2]));
+}
+
+function getTimeForAll(schedule) {
+    var rez = [];
+    var listTime = schedule.Danny.concat(schedule.Rusty).concat(schedule.Linus);
+    for (var i = 0; i < listTime.length; i++) {
+        var dataTimeStart = listTime[i].from.match(DATE);
+
+        var dataTimeEnd = listTime[i].to.match(DATE);
+
+        rez.push({ start: WEEKDAY.indexOf(dataTimeStart[1]) * DAY + (parseInt(dataTimeStart[2]) +
+            shift - parseInt(dataTimeStart[4])) * HOUR + parseInt(dataTimeStart[3]),
+        end: WEEKDAY.indexOf(dataTimeEnd[1]) * DAY + (parseInt(dataTimeEnd[2]) +
+        shift - parseInt(dataTimeEnd[4])) * HOUR + parseInt(dataTimeEnd[3]) });
+    }
+
+    return rez;
+}
+
+function searchTimeInAllRang(timeBank, time, busyTime, day) {
+    for (var startRobbery = timeBank[0]; startRobbery < timeBank[1] - time + 1; startRobbery++) {
+
+        var timeless = searchTime(busyTime, startRobbery, time, day);
+        if (timeless) {
+
+            return timeless;
+        }
+    }
+}
+
+function isIntersects(bTime, start, end) {
+    return !(bTime.end <= start || bTime.start >= end);
+}
+
+function searchTime(busyTime, startRobbery, time, day) {
+    if (busyTime.every(function (bTime) {
+        return !isIntersects(bTime, day * DAY + startRobbery, day * DAY + startRobbery + time);
+    })) {
+        return day * DAY + startRobbery;
+    }
+}
+
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
-    console.info(schedule, duration, workingHours);
+
+    var timeWorkBank = getTime(workingHours.from, workingHours.to);
+    var freeTimeAllParticipants = getTimeForAll(schedule);
+
+    var startRobbery;
+    for (var i = 0; i < 3; i++) {
+        startRobbery = searchTimeInAllRang(timeWorkBank, duration, freeTimeAllParticipants, i);
+        if (startRobbery) {
+            break;
+        }
+    }
+
 
     return {
 
@@ -24,7 +93,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {Boolean}
          */
         exists: function () {
-            return false;
+            return startRobbery !== undefined;
         },
 
         /**
@@ -35,7 +104,14 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {String}
          */
         format: function (template) {
-            return template;
+            if (!this.exists()) {
+                return '';
+            }
+            var date = createDateFromMinures(startRobbery);
+
+            return template.replace(/%HH/, date.hours)
+            .replace(/%MM/, date.minutes)
+            .replace(/%DD/, date.day);
         },
 
         /**
@@ -48,3 +124,26 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
         }
     };
 };
+
+function convertToString(number) {
+    if (number === 0) {
+        return '00';
+    }
+    if (number < 10) {
+        return '0' + String(number);
+    }
+
+    return String(number);
+}
+
+function createDateFromMinures(minutes) {
+    var day = Math.floor(minutes / DAY);
+    var hours = Math.floor((minutes - day * DAY) / HOUR);
+    var minutess = minutes - day * DAY - hours * HOUR;
+
+    return {
+        day: WEEKDAY[day],
+        hours: convertToString(hours),
+        minutes: convertToString(minutess)
+    };
+}
