@@ -1,7 +1,7 @@
 'use strict';
 
 var DATE = /^([А-Я]{2})?[ ]?(\d\d)[:](\d\d)\+(\d+)$/;
-var WEEKDAY = ['ПН', 'ВТ', 'СР'];
+var WEEKDAY = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
 var HOUR = 60;
 var DAY = 24 * HOUR;
 var shift = 0;
