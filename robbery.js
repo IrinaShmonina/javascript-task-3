@@ -51,9 +51,8 @@ function getTimeForAll(schedule) {
 
 function searchTimeInAllRang(timeBank, time, busyTime, day) {
     for (var startRobbery = timeBank[0]; startRobbery < timeBank[1] - time + 1; startRobbery++) {
-
         var timeless = searchTime(busyTime, startRobbery, time, day);
-        if (timeless) {
+        if (timeless !== undefined) {
 
             return timeless;
         }
@@ -80,7 +79,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     var startRobbery;
     for (var i = 0; i < 3; i++) {
         startRobbery = searchTimeInAllRang(timeWorkBank, duration, freeTimeAllParticipants, i);
-        if (startRobbery) {
+        if (startRobbery !== undefined) {
             break;
         }
     }
