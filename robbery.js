@@ -38,7 +38,7 @@ function getShiftInHours(time) {
 
 function getTimeline(schedule, shiftInHours) {
     var timeline = [];
-    var times = schedule.Danny.concat(schedule.Rusty).concat(schedule.Linus);
+    var times = concatTimeline(schedule);
     for (var i = 0; i < times.length; i++) {
         var dataTimeStart = times[i].from.match(DATE);
         var dataTimeEnd = times[i].to.match(DATE);
@@ -52,9 +52,10 @@ function getTimeline(schedule, shiftInHours) {
 }
 
 function convertDataToMinutesWithShiftInHours(time, shiftInHours) {
-    return WEEKDAY.indexOf(time[1]) * DAY + 
+
+    return (WEEKDAY.indexOf(time[1]) * DAY + 
                 (parseInt(time[2], 10) + shiftInHours - parseInt(time[4], 10)) * HOUR + 
-                parseInt(time[3], 10)
+                parseInt(time[3], 10));
 }
 
 function concatTimeline(schedule) {
