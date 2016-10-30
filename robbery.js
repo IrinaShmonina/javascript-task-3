@@ -31,31 +31,30 @@ function getMinutes(str) {
     return (parseInt(partsTime[1], 10) * HOUR + parseInt(partsTime[2], 10));
 }
 
-function getShift(time) {
+function getShiftInHours(time) {
 
     return (parseInt(time.match(TIME)[3], 10));
 }
 
-function getTimeline(schedule, shift) {
+function getTimeline(schedule, shiftInHours) {
     var timeline = [];
     var times = schedule.Danny.concat(schedule.Rusty).concat(schedule.Linus);
     for (var i = 0; i < times.length; i++) {
         var dataTimeStart = times[i].from.match(DATE);
         var dataTimeEnd = times[i].to.match(DATE);
         timeline.push({
-
-            start: WEEKDAY.indexOf(dataTimeStart[1]) * DAY + 
-            (parseInt(dataTimeStart[2], 10) + shift - parseInt(dataTimeStart[4], 10)) * HOUR + 
-            parseInt(dataTimeStart[3], 10),
-
-
-            end: WEEKDAY.indexOf(dataTimeEnd[1]) * DAY + 
-            (parseInt(dataTimeEnd[2], 10) + shift - parseInt(dataTimeEnd[4], 10)) * HOUR + 
-            parseInt(dataTimeEnd[3], 10)
+            start: convertDataToMinutesWithShiftInHours(dataTimeStart, shiftInHours),
+            end: convertDataToMinutesWithShiftInHours(dataTimeEnd, shiftInHours)
         });
     }
 
     return timeline;
+}
+
+function convertDataToMinutesWithShiftInHours(time, shiftInHours) {
+    return WEEKDAY.indexOf(time[1]) * DAY + 
+                (parseInt(time[2], 10) + shiftInHours - parseInt(time[4], 10)) * HOUR + 
+                parseInt(time[3], 10)
 }
 
 function concatTimeline(schedule) {
@@ -88,11 +87,11 @@ function searchTime(busyTime, startRobbery, time, day) {
 }
 
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
-    var shift = getShift(workingHours.from);
+    var shiftInHours = getShiftInHours(workingHours.from);
 
     var timeWorkBank = getInterval(workingHours.from, workingHours.to);
 
-    var timeline = getTimeline(schedule, shift);
+    var timeline = getTimeline(schedule, shiftInHours);
 
     var startRobbery;
     for (var i = 0; i < 3; i++) {
