@@ -27,26 +27,27 @@ function getInterval(timeFrom, timeTo) {
 
 function getMinutes(str) {
     var partsTime = str.match(TIME);
-    
+
     return (parseInt(partsTime[1], 10) * HOUR + parseInt(partsTime[2], 10));
 }
 
-function getShift(time){
+function getShift(time) {
 
     return (parseInt(time.match(TIME)[3], 10));
 }
 
-function getTimeline(schedule,shift) {
+function getTimeline(schedule, shift) {
     var timeline = [];
     var times = concatTimeline(schedule);
-    console.log(times);
-    console.log(times.length);
     for (var i = 0; i < times.length; i++) {
+        var dataTimeStart = times[i].from.match(DATE);
         var dataTimeEnd = times[i].to.match(DATE);
-        timeline.push({ start: WEEKDAY.indexOf(dataTimeStart[1]) * DAY + (parseInt(dataTimeStart[2], 10) +
-            shift - parseInt(dataTimeStart[4]), 10) * HOUR + parseInt(dataTimeStart[3], 10),
-        end: WEEKDAY.indexOf(dataTimeEnd[1]) * DAY + (parseInt(dataTimeEnd[2], 10) +
-        shift - parseInt(dataTimeEnd[4], 10)) * HOUR + parseInt(dataTimeEnd[3], 10) });
+        timeline.push({
+            start: WEEKDAY.indexOf(dataTimeStart[1]) * DAY + (parseInt(dataTimeStart[2], 10) +
+                shift - parseInt(dataTimeStart[4]), 10) * HOUR + parseInt(dataTimeStart[3], 10),
+            end: WEEKDAY.indexOf(dataTimeEnd[1]) * DAY + (parseInt(dataTimeEnd[2], 10) +
+                shift - parseInt(dataTimeEnd[4], 10)) * HOUR + parseInt(dataTimeEnd[3], 10)
+        });
     }
 
     return timeline;
@@ -54,7 +55,7 @@ function getTimeline(schedule,shift) {
 
 function concatTimeline(schedule) {
 
-    return Object.keys(schedule).reduce(function (acc, key) { 
+    return Object.keys(schedule).reduce(function (acc, key) {
         return acc.concat(schedule[key]);
     }, []);
 }
@@ -83,7 +84,6 @@ function searchTime(busyTime, startRobbery, time, day) {
 
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     var shift = getShift(workingHours.from);
-    console.log(shift);
     var timeWorkBank = getInterval(workingHours.from, workingHours.to);
     var timeline = getTimeline(schedule, shift);
 
