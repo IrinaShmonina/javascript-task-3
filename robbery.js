@@ -53,8 +53,8 @@ function getTimeline(schedule, shiftInHours) {
 
 function convertDataToMinutesWithShiftInHours(time, shiftInHours) {
 
-    return (WEEKDAY.indexOf(time[1]) * DAY + 
-                (parseInt(time[2], 10) + shiftInHours - parseInt(time[4], 10)) * HOUR + 
+    return (WEEKDAY.indexOf(time[1]) * DAY +
+                (parseInt(time[2], 10) + shiftInHours - parseInt(time[4], 10)) * HOUR +
                 parseInt(time[3], 10));
 }
 
