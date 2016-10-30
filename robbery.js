@@ -1,10 +1,11 @@
 'use strict';
 
-var DATE = /^([А-Я]{2})?[ ]?(\d\d)[:](\d\d)\+(\d+)$/;
+var DATE = /^([А-Я]{2})?[ ]?(\d{2})[:](\d{2})\+(\d+)$/;
+var TIME = /^(\d\d):(\d\d)[+](\d)$/;
 var WEEKDAY = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
 var HOUR = 60;
 var DAY = 24 * HOUR;
-var shift = 0;
+
 exports.isStar = false;
 
 /**
@@ -17,44 +18,53 @@ exports.isStar = false;
  */
 
 
-function getTime(timeFrom, timeTo) {
-    var start = getMinut(timeFrom); // in minuts
-    var end = getMinut(timeTo);
+function getInterval(timeFrom, timeTo) {
+    var start = getMinutes(timeFrom); // in minuts
+    var end = getMinutes(timeTo);
 
     return [start, end];
 }
 
-function getMinut(str) {
-    var re = /^(\d\d):(\d\d)[+](\d)$/;
-    var rez = str.match(re);
-    shift = parseInt(rez[3]);
-
-    return (parseInt(rez[1]) * HOUR + parseInt(rez[2]));
+function getMinutes(str) {
+    var partsTime = str.match(TIME);
+    
+    return (parseInt(partsTime[1], 10) * HOUR + parseInt(partsTime[2], 10));
 }
 
-function getTimeForAll(schedule) {
-    var rez = [];
-    var listTime = schedule.Danny.concat(schedule.Rusty).concat(schedule.Linus);
-    for (var i = 0; i < listTime.length; i++) {
-        var dataTimeStart = listTime[i].from.match(DATE);
+function getShift(time){
 
-        var dataTimeEnd = listTime[i].to.match(DATE);
+    return (parseInt(time.match(TIME)[3], 10));
+}
 
-        rez.push({ start: WEEKDAY.indexOf(dataTimeStart[1]) * DAY + (parseInt(dataTimeStart[2]) +
-            shift - parseInt(dataTimeStart[4])) * HOUR + parseInt(dataTimeStart[3]),
-        end: WEEKDAY.indexOf(dataTimeEnd[1]) * DAY + (parseInt(dataTimeEnd[2]) +
-        shift - parseInt(dataTimeEnd[4])) * HOUR + parseInt(dataTimeEnd[3]) });
+function getTimeline(schedule,shift) {
+    var timeline = [];
+    var times = concatTimeline(schedule);
+    console.log(times);
+    console.log(times.length);
+    for (var i = 0; i < times.length; i++) {
+        var dataTimeEnd = times[i].to.match(DATE);
+        timeline.push({ start: WEEKDAY.indexOf(dataTimeStart[1]) * DAY + (parseInt(dataTimeStart[2], 10) +
+            shift - parseInt(dataTimeStart[4]), 10) * HOUR + parseInt(dataTimeStart[3], 10),
+        end: WEEKDAY.indexOf(dataTimeEnd[1]) * DAY + (parseInt(dataTimeEnd[2], 10) +
+        shift - parseInt(dataTimeEnd[4], 10)) * HOUR + parseInt(dataTimeEnd[3], 10) });
     }
 
-    return rez;
+    return timeline;
 }
 
-function searchTimeInAllRang(timeBank, time, busyTime, day) {
-    for (var startRobbery = timeBank[0]; startRobbery < timeBank[1] - time + 1; startRobbery++) {
-        var timeless = searchTime(busyTime, startRobbery, time, day);
-        if (timeless !== undefined) {
+function concatTimeline(schedule) {
 
-            return timeless;
+    return Object.keys(schedule).reduce(function (acc, key) { 
+        return acc.concat(schedule[key]);
+    }, []);
+}
+
+function searchTimeRobbery(timeBank, time, busyTime, day) {
+    for (var startRobbery = timeBank[0]; startRobbery < timeBank[1] - time + 1; startRobbery++) {
+        var period = searchTime(busyTime, startRobbery, time, day);
+        if (period !== undefined) {
+
+            return period;
         }
     }
 }
@@ -72,13 +82,14 @@ function searchTime(busyTime, startRobbery, time, day) {
 }
 
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
-
-    var timeWorkBank = getTime(workingHours.from, workingHours.to);
-    var freeTimeAllParticipants = getTimeForAll(schedule);
+    var shift = getShift(workingHours.from);
+    console.log(shift);
+    var timeWorkBank = getInterval(workingHours.from, workingHours.to);
+    var timeline = getTimeline(schedule, shift);
 
     var startRobbery;
     for (var i = 0; i < 3; i++) {
-        startRobbery = searchTimeInAllRang(timeWorkBank, duration, freeTimeAllParticipants, i);
+        startRobbery = searchTimeRobbery(timeWorkBank, duration, timeline, i);
         if (startRobbery !== undefined) {
             break;
         }
