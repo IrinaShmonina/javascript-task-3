@@ -38,15 +38,20 @@ function getShift(time) {
 
 function getTimeline(schedule, shift) {
     var timeline = [];
-    var times = concatTimeline(schedule);
+    var times = schedule.Danny.concat(schedule.Rusty).concat(schedule.Linus);
     for (var i = 0; i < times.length; i++) {
         var dataTimeStart = times[i].from.match(DATE);
         var dataTimeEnd = times[i].to.match(DATE);
         timeline.push({
-            start: WEEKDAY.indexOf(dataTimeStart[1]) * DAY + (parseInt(dataTimeStart[2], 10) +
-                shift - parseInt(dataTimeStart[4]), 10) * HOUR + parseInt(dataTimeStart[3], 10),
-            end: WEEKDAY.indexOf(dataTimeEnd[1]) * DAY + (parseInt(dataTimeEnd[2], 10) +
-                shift - parseInt(dataTimeEnd[4], 10)) * HOUR + parseInt(dataTimeEnd[3], 10)
+
+            start: WEEKDAY.indexOf(dataTimeStart[1]) * DAY + 
+            (parseInt(dataTimeStart[2], 10) + shift - parseInt(dataTimeStart[4], 10)) * HOUR + 
+            parseInt(dataTimeStart[3], 10),
+
+
+            end: WEEKDAY.indexOf(dataTimeEnd[1]) * DAY + 
+            (parseInt(dataTimeEnd[2], 10) + shift - parseInt(dataTimeEnd[4], 10)) * HOUR + 
+            parseInt(dataTimeEnd[3], 10)
         });
     }
 
@@ -84,7 +89,9 @@ function searchTime(busyTime, startRobbery, time, day) {
 
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     var shift = getShift(workingHours.from);
+
     var timeWorkBank = getInterval(workingHours.from, workingHours.to);
+
     var timeline = getTimeline(schedule, shift);
 
     var startRobbery;
