@@ -42,15 +42,15 @@ function getTimeline(schedule, shiftInHours) {
         var dataTimeStart = times[i].from.match(DATE);
         var dataTimeEnd = times[i].to.match(DATE);
         timeline.push({
-            start: convertDataToMinutesWithShiftInHours(dataTimeStart, shiftInHours),
-            end: convertDataToMinutesWithShiftInHours(dataTimeEnd, shiftInHours)
+            start: convertDataToMinutes(dataTimeStart, shiftInHours),
+            end: convertDataToMinutes(dataTimeEnd, shiftInHours)
         });
     }
 
     return timeline;
 }
 
-function convertDataToMinutesWithShiftInHours(time, shiftInHours) {
+function convertDataToMinutes(time, shiftInHours) {
     return (WEEKDAY.indexOf(time[1]) * DAY +
                 (parseInt(time[2], 10) + shiftInHours - parseInt(time[4], 10)) * HOUR +
                 parseInt(time[3], 10));
