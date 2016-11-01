@@ -1,7 +1,7 @@
 'use strict';
 
 var DATE = /^([А-Я]{2})?[ ]?(\d{2})[:](\d{2})\+(\d+)$/;
-var TIME = /^(\d\d):(\d\d)[+](\d)$/;
+var TIME_FORMAT = /^(\d\d):(\d\d)[+](\d)$/;
 var WEEKDAY = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
 var HOUR = 60;
 var DAY = 24 * HOUR;
@@ -19,21 +19,20 @@ exports.isStar = false;
 
 
 function getInterval(timeFrom, timeTo) {
-    var start = getMinutes(timeFrom); // in minuts
+    var start = getMinutes(timeFrom); 
     var end = getMinutes(timeTo);
 
     return [start, end];
 }
 
-function getMinutes(str) {
-    var partsTime = str.match(TIME);
+function getMinutes(hoursAndMinutes) {
+    var partsTime = hoursAndMinutes.match(TIME_FORMAT);
 
-    return (parseInt(partsTime[1], 10) * HOUR + parseInt(partsTime[2], 10));
+    return parseInt(partsTime[1], 10) * HOUR + parseInt(partsTime[2], 10);
 }
 
 function getShiftInHours(time) {
-
-    return (parseInt(time.match(TIME)[3], 10));
+    return (parseInt(time.match(TIME_FORMAT)[3], 10));
 }
 
 function getTimeline(schedule, shiftInHours) {
@@ -52,14 +51,12 @@ function getTimeline(schedule, shiftInHours) {
 }
 
 function convertDataToMinutesWithShiftInHours(time, shiftInHours) {
-
     return (WEEKDAY.indexOf(time[1]) * DAY +
                 (parseInt(time[2], 10) + shiftInHours - parseInt(time[4], 10)) * HOUR +
                 parseInt(time[3], 10));
 }
 
 function concatTimeline(schedule) {
-
     return Object.keys(schedule).reduce(function (acc, key) {
         return acc.concat(schedule[key]);
     }, []);
@@ -75,13 +72,13 @@ function searchTimeRobbery(timeBank, time, busyTime, day) {
     }
 }
 
-function isIntersects(bTime, start, end) {
-    return !(bTime.end <= start || bTime.start >= end);
+function areIntersects(busyTime, start, end) {
+    return !(busyTime.end <= start || busyTime.start >= end);
 }
 
-function searchTime(busyTime, startRobbery, time, day) {
-    if (busyTime.every(function (bTime) {
-        return !isIntersects(bTime, day * DAY + startRobbery, day * DAY + startRobbery + time);
+function searchTime(busyTimes, startRobbery, time, day) {
+    if (busyTimes.every(function (busyTime) {
+        return !areIntersects(busyTime, day * DAY + startRobbery, day * DAY + startRobbery + time);
     })) {
         return day * DAY + startRobbery;
     }
