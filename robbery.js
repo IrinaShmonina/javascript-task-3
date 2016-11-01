@@ -19,7 +19,7 @@ exports.isStar = false;
 
 
 function getInterval(timeFrom, timeTo) {
-    var start = getMinutes(timeFrom); 
+    var start = getMinutes(timeFrom);
     var end = getMinutes(timeTo);
 
     return [start, end];
