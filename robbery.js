@@ -82,9 +82,10 @@ function areIntersects(busyTime, start, end) {
 }
 
 function searchTime(busyTimes, startRobbery, time, day) {
-    if (busyTimes.every(function (busyTime) {
+    var isPossibleRobberyTime = busyTimes.every(function (busyTime) {
         return !areIntersects(busyTime, day * DAY + startRobbery, day * DAY + startRobbery + time);
-    })) {
+    });
+    if (isPossibleRobberyTime) {
         return day * DAY + startRobbery;
     }
 }
@@ -122,7 +123,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
             if (!this.exists()) {
                 return '';
             }
-            var date = createDateFromMinures(startRobbery);
+            var date = createDateFromMinutes(startRobbery);
 
             return template.replace(/%HH/, date.hours)
             .replace(/%MM/, date.minutes)
@@ -151,7 +152,7 @@ function convertToString(number) {
     return String(number);
 }
 
-function createDateFromMinures(minutes) {
+function createDateFromMinutes(minutes) {
     var dayRobbery = Math.floor(minutes / DAY);
     var hoursRobbery = Math.floor((minutes % DAY) / HOUR);
     var minutesRobbery = minutes % DAY % HOUR;
