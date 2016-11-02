@@ -18,11 +18,14 @@ exports.isStar = false;
  */
 
 
-function getInterval(timeFrom, timeTo) {
+function getIntervalInMinutes(timeFrom, timeTo) {
     var start = getMinutes(timeFrom);
     var end = getMinutes(timeTo);
 
-    return [start, end];
+    return {
+        from: start,
+        to: end
+    };
 }
 
 function getMinutes(hoursAndMinutes) {
@@ -39,11 +42,11 @@ function getTimeline(schedule, shiftInHours) {
     var timeline = [];
     var times = concatTimeline(schedule);
     for (var i = 0; i < times.length; i++) {
-        var dataTimeStart = times[i].from.match(DATE);
-        var dataTimeEnd = times[i].to.match(DATE);
+        var timeStart = times[i].from.match(DATE);
+        var timeEnd = times[i].to.match(DATE);
         timeline.push({
-            start: convertDataToMinutes(dataTimeStart, shiftInHours),
-            end: convertDataToMinutes(dataTimeEnd, shiftInHours)
+            start: convertDataToMinutes(timeStart, shiftInHours),
+            end: convertDataToMinutes(timeEnd, shiftInHours)
         });
     }
 
@@ -51,9 +54,10 @@ function getTimeline(schedule, shiftInHours) {
 }
 
 function convertDataToMinutes(time, shiftInHours) {
-    return (WEEKDAY.indexOf(time[1]) * DAY +
-                (parseInt(time[2], 10) + shiftInHours - parseInt(time[4], 10)) * HOUR +
-                parseInt(time[3], 10));
+    var dayInMinutes = WEEKDAY.indexOf(time[1]) * DAY;
+    var hourInMinutesWithShift = (parseInt(time[2], 10) + shiftInHours - parseInt(time[4], 10)) * HOUR;
+    var minutes = parseInt(time[3], 10);
+    return (dayInMinutes + hourInMinutesWithShift + minutes);
 }
 
 function concatTimeline(schedule) {
@@ -63,10 +67,9 @@ function concatTimeline(schedule) {
 }
 
 function searchTimeRobbery(timeBank, time, busyTime, day) {
-    for (var startRobbery = timeBank[0]; startRobbery < timeBank[1] - time + 1; startRobbery++) {
+    for (var startRobbery = timeBank.from; startRobbery < timeBank.to - time + 1; startRobbery++) {
         var period = searchTime(busyTime, startRobbery, time, day);
         if (period !== undefined) {
-
             return period;
         }
     }
@@ -86,11 +89,8 @@ function searchTime(busyTimes, startRobbery, time, day) {
 
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     var shiftInHours = getShiftInHours(workingHours.from);
-
-    var timeWorkBank = getInterval(workingHours.from, workingHours.to);
-
+    var timeWorkBank = getIntervalInMinutes(workingHours.from, workingHours.to);
     var timeline = getTimeline(schedule, shiftInHours);
-
     var startRobbery;
     for (var i = 0; i < 3; i++) {
         startRobbery = searchTimeRobbery(timeWorkBank, duration, timeline, i);
@@ -98,7 +98,6 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
             break;
         }
     }
-
 
     return {
 
@@ -144,20 +143,20 @@ function convertToString(number) {
         return '00';
     }
     if (number < 10) {
-        return '0' + String(number);
+        return '0' + number;
     }
 
     return String(number);
 }
 
 function createDateFromMinures(minutes) {
-    var day = Math.floor(minutes / DAY);
-    var hours = Math.floor((minutes % DAY) / HOUR);
-    var minutess = minutes % DAY % HOUR;
+    var dayRobbery = Math.floor(minutes / DAY);
+    var hoursRobbery = Math.floor((minutes % DAY) / HOUR);
+    var minutesRobbery = minutes % DAY % HOUR;
 
     return {
-        day: WEEKDAY[day],
-        hours: convertToString(hours),
-        minutes: convertToString(minutess)
+        day: WEEKDAY[dayRobbery],
+        hours: convertToString(hoursRobbery),
+        minutes: convertToString(minutesRobbery)
     };
 }
