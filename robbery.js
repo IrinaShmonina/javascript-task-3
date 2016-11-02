@@ -34,7 +34,7 @@ function getMinutes(hoursAndMinutes) {
     return parseInt(partsTime[1], 10) * HOUR + parseInt(partsTime[2], 10);
 }
 
-function getShiftInHours(time) {
+function getTimeZone(time) {
     return (parseInt(time.match(TIME_FORMAT)[3], 10));
 }
 
@@ -91,9 +91,9 @@ function searchTime(busyTimes, startRobbery, time, day) {
 }
 
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
-    var shiftInHours = getShiftInHours(workingHours.from);
+    var timeZone = getTimeZone(workingHours.from);
     var timeWorkBank = getIntervalInMinutes(workingHours.from, workingHours.to);
-    var timeline = getTimeline(schedule, shiftInHours);
+    var timeline = getTimeline(schedule, timeZone);
     var startRobbery;
     for (var i = 0; i < 3; i++) {
         startRobbery = searchTimeRobbery(timeWorkBank, duration, timeline, i);
