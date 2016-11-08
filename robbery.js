@@ -1,10 +1,9 @@
 'use strict';
 
-var DATE = /^([А-Я]{2})?[ ]?(\d{2})[:](\d{2})\+(\d+)$/;
-var TIME_FORMAT = /^(\d\d):(\d\d)[+](\d)$/;
+var TIME_REGEX = /(?:([ПН|ВТ|СР|ЧТ|ПТ|СБ|ВС]{2})\s)?(\d{2}):(\d{2})\+(\d{1,2})/;
 var WEEKDAY = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
-var HOUR = 60;
-var DAY = 24 * HOUR;
+var HOUR_IN_MINUTES = 60;
+var DAY_IN_MINUTES = 24 * HOUR_IN_MINUTES;
 
 exports.isStar = false;
 
@@ -19,58 +18,62 @@ exports.isStar = false;
 
 
 function getIntervalInMinutes(timeFrom, timeTo) {
-    var start = getMinutes(timeFrom);
-    var end = getMinutes(timeTo);
 
     return {
-        from: start,
-        to: end
+        from: getMinutes(timeFrom),
+        to: getMinutes(timeTo)
     };
 }
 
 function getMinutes(hoursAndMinutes) {
-    var partsTime = hoursAndMinutes.match(TIME_FORMAT);
+    var partsTime = hoursAndMinutes.match(TIME_REGEX);
 
-    return parseInt(partsTime[1], 10) * HOUR + parseInt(partsTime[2], 10);
+    return parseInt(partsTime[2], 10) * HOUR_IN_MINUTES + parseInt(partsTime[3], 10);
 }
 
 function getTimeZone(time) {
-    return (parseInt(time.match(TIME_FORMAT)[3], 10));
+    return parseInt(time.match(TIME_REGEX)[4], 10);
 }
 
 function getTimeline(schedule, shiftInHours) {
-    var timeline = [];
-    var times = concatTimeline(schedule);
-    for (var i = 0; i < times.length; i++) {
-        var timeStart = times[i].from.match(DATE);
-        var timeEnd = times[i].to.match(DATE);
-        timeline.push({
-            start: convertDataToMinutes(timeStart, shiftInHours),
-            end: convertDataToMinutes(timeEnd, shiftInHours)
-        });
-    }
 
-    return timeline;
+    return Object
+        .keys(schedule)
+        .reduce(function (acc, key) {
+            return acc.concat(schedule[key]);
+        }, [])
+        .map(function (record) {
+            return {
+                start: convertDataToMinutes(parseDate(record.from), shiftInHours),
+                end: convertDataToMinutes(parseDate(record.to), shiftInHours)
+            };
+        });
 }
 
-function convertDataToMinutes(time, shiftInHours) {
-    var dayInMinutes = WEEKDAY.indexOf(time[1]) * DAY;
-    var hourInMinutesWithShift = (parseInt(time[2], 10) + shiftInHours -
-        parseInt(time[4], 10)) * HOUR;
-    var minutes = parseInt(time[3], 10);
+function parseDate(dateString) {
+    var dateComponents = dateString.match(TIME_REGEX);
+
+    return {
+        day: dateComponents[1],
+        hour: parseInt(dateComponents[2], 10),
+        minutes: parseInt(dateComponents[3], 10),
+        timezone: parseInt(dateComponents[4], 10)
+    };
+}
+
+function convertDataToMinutes(record, shiftInHours) {
+    var dayInMinutes = WEEKDAY.indexOf(record.day) * DAY_IN_MINUTES;
+    var hourInMinutesWithShift = (record.hour + shiftInHours - record.timezone) * HOUR_IN_MINUTES;
+    var minutes = record.minutes;
 
     return (dayInMinutes + hourInMinutesWithShift + minutes);
 }
 
-function concatTimeline(schedule) {
-    return Object.keys(schedule).reduce(function (acc, key) {
-        return acc.concat(schedule[key]);
-    }, []);
-}
-
-function searchTimeRobbery(timeBank, time, busyTime, day) {
-    for (var startRobbery = timeBank.from; startRobbery < timeBank.to - time + 1; startRobbery++) {
-        var period = searchTime(busyTime, startRobbery, time, day);
+function searchTimeRobbery(timeBank, duration, timeline, day) {
+    for (var startRobbery = timeBank.from;
+         startRobbery < timeBank.to - duration + 1;
+         startRobbery++) {
+        var period = searchTime(timeline, startRobbery, duration, day);
         if (period !== undefined) {
             return period;
         }
@@ -78,15 +81,16 @@ function searchTimeRobbery(timeBank, time, busyTime, day) {
 }
 
 function areIntersects(busyTime, start, end) {
-    return !(busyTime.end <= start || busyTime.start >= end);
+    return busyTime.end > start && busyTime.start < end;
 }
 
-function searchTime(busyTimes, startRobbery, time, day) {
-    var isPossibleRobberyTime = busyTimes.every(function (busyTime) {
-        return !areIntersects(busyTime, day * DAY + startRobbery, day * DAY + startRobbery + time);
+function searchTime(timeline, startRobbery, duration, day) {
+    var isPossibleRobberyTime = timeline.every(function (busyTime) {
+        return !areIntersects(busyTime, day * DAY_IN_MINUTES + startRobbery,
+            day * DAY_IN_MINUTES + startRobbery + duration);
     });
     if (isPossibleRobberyTime) {
-        return day * DAY + startRobbery;
+        return day * DAY_IN_MINUTES + startRobbery;
     }
 }
 
@@ -95,8 +99,8 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     var timeWorkBank = getIntervalInMinutes(workingHours.from, workingHours.to);
     var timeline = getTimeline(schedule, timeZone);
     var startRobbery;
-    for (var i = 0; i < 3; i++) {
-        startRobbery = searchTimeRobbery(timeWorkBank, duration, timeline, i);
+    for (var day = 0; day < 3; day++) {
+        startRobbery = searchTimeRobbery(timeWorkBank, duration, timeline, day);
         if (startRobbery !== undefined) {
             break;
         }
@@ -125,9 +129,9 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
             }
             var date = createDateFromMinutes(startRobbery);
 
-            return template.replace(/%HH/, date.hours)
-            .replace(/%MM/, date.minutes)
-            .replace(/%DD/, date.day);
+            return template.replace('%HH', date.hours)
+            .replace('%MM', date.minutes)
+            .replace('%DD', date.day);
         },
 
         /**
@@ -141,25 +145,18 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     };
 };
 
-function convertToString(number) {
-    if (number === 0) {
-        return '00';
-    }
-    if (number < 10) {
-        return '0' + number;
-    }
-
-    return String(number);
+function padLeftZero(number) {
+    return ('0' + number).slice(-2);
 }
 
 function createDateFromMinutes(minutes) {
-    var dayRobbery = Math.floor(minutes / DAY);
-    var hoursRobbery = Math.floor((minutes % DAY) / HOUR);
-    var minutesRobbery = minutes % DAY % HOUR;
+    var dayRobbery = Math.floor(minutes / DAY_IN_MINUTES);
+    var hoursRobbery = Math.floor((minutes % DAY_IN_MINUTES) / HOUR_IN_MINUTES);
+    var minutesRobbery = minutes % DAY_IN_MINUTES % HOUR_IN_MINUTES;
 
     return {
         day: WEEKDAY[dayRobbery],
-        hours: convertToString(hoursRobbery),
-        minutes: convertToString(minutesRobbery)
+        hours: padLeftZero(hoursRobbery),
+        minutes: padLeftZero(minutesRobbery)
     };
 }
